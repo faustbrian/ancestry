@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd"
+    colors="true"
+    stopOnError="true"
+    stopOnFailure="true"
+    failOnWarning="true"
+    failOnRisky="true"
+    cacheDirectory=".phpunit.cache">
+    <php>
+        <env name="ANCESTRY_PRIMARY_KEY_TYPE" value="uuid" />
+        <env name="ANCESTRY_ANCESTOR_MORPH_TYPE" value="uuidMorph" />
+        <env name="ANCESTRY_DESCENDANT_MORPH_TYPE" value="uuidMorph" />
+    </php>
+    <source>
+        <include>
+            <directory suffix=".php">./src</directory>
+        </include>
+        <exclude>
+            <file>./src/AncestryServiceProvider.php</file>
+        </exclude>
+    </source>
+    <testsuites>
+        <testsuite name="default">
+            <directory suffix=".php">./tests</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>
