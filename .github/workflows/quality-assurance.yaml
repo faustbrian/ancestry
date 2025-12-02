@@ -1,0 +1,72 @@
+---
+name: Quality Assurance
+on:
+    push:
+        branches: ['main']
+    pull_request: ~
+
+jobs:
+    tests:
+        name: Tests on ${{ matrix.php }} ${{ matrix.composer-flags }}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php: ['8.5']
+                composer-flags: ['']
+        steps:
+            - uses: actions/checkout@v6
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  coverage: pcov
+                  tools: composer:v2
+            - run: composer install --no-progress ${{ matrix.composer-flags }}
+            - run: vendor/bin/pest --coverage --min=90
+
+    phpstan:
+        name: PHPStan on ${{ matrix.php }} ${{ matrix.composer-flags }}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php: ['8.5']
+                composer-flags: ['']
+        steps:
+            - uses: actions/checkout@v6
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  tools: composer:v2
+            - run: composer install --no-progress ${{ matrix.composer-flags }}
+            - run: vendor/bin/phpstan
+
+    php-cs-fixer:
+        name: Code Style on ${{ matrix.php }} ${{ matrix.composer-flags }}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php: ['8.5']
+                composer-flags: ['']
+        steps:
+            - uses: actions/checkout@v6
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  tools: composer:v2
+            - run: composer install --no-progress ${{ matrix.composer-flags }}
+            - run: vendor/bin/php-cs-fixer check --diff
+
+    rector:
+        name: Rector on ${{ matrix.php }} ${{ matrix.composer-flags }}
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                php: ['8.5']
+                composer-flags: ['']
+        steps:
+            - uses: actions/checkout@v6
+            - uses: shivammathur/setup-php@v2
+              with:
+                  php-version: ${{ matrix.php }}
+                  tools: composer:v2
+            - run: composer install --no-progress ${{ matrix.composer-flags }}
+            - run: vendor/bin/rector --dry-run
