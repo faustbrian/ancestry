@@ -1,0 +1,56 @@
+# To use:
+# Run "docker-compose build" to rebuild the app container.
+# Run "docker-compose run -u $(id -u ${USER}):$(id -g ${USER}) --rm php85 composer install" to install dependencies.
+# Run "docker-compose run -u $(id -u ${USER}):$(id -g ${USER}) --rm php85 vendor/bin/pest" to run the test script on 8.5.
+# Run "docker-compose down -v" to fully wipe everything and start over.
+# Run "docker-compose run -u $(id -u ${USER}):$(id -g ${USER}) --rm php85 bash" to log into the container to run tests selectively.
+services:
+    php85:
+        build: ./docker/php/85
+        volumes:
+            - ~/.composer:/.composer
+            - .:/usr/src/myapp
+            - ./docker/php/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
+            - ./docker/php/conf.d/memory.ini:/usr/local/etc/php/conf.d/memory.ini
+        environment:
+            DB_CONNECTION: ${DB_CONNECTION:-sqlite}
+            DB_HOST: ${DB_HOST:-}
+            DB_PORT: ${DB_PORT:-}
+            DB_DATABASE: ${DB_DATABASE:-}
+            DB_USERNAME: ${DB_USERNAME:-}
+            DB_PASSWORD: ${DB_PASSWORD:-}
+            ANCESTRY_PRIMARY_KEY_TYPE: ${ANCESTRY_PRIMARY_KEY_TYPE:-id}
+            ANCESTRY_ANCESTOR_MORPH_TYPE: ${ANCESTRY_ANCESTOR_MORPH_TYPE:-morph}
+            ANCESTRY_DESCENDANT_MORPH_TYPE: ${ANCESTRY_DESCENDANT_MORPH_TYPE:-morph}
+    profile:
+        build: ./docker/php/85
+        volumes:
+            - .:/usr/src/myapp
+            - ./docker/php/conf.d/error_reporting.ini:/usr/local/etc/php/conf.d/error_reporting.ini
+            - ./docker/php/conf.d/memory.ini:/usr/local/etc/php/conf.d/memory.ini
+
+    mysql:
+        image: mysql:9
+        environment:
+            MYSQL_ROOT_PASSWORD: password
+            MYSQL_DATABASE: ancestry_test
+        ports:
+            - "3307:3306"
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
+
+    postgres:
+        image: postgres:18
+        environment:
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: ancestry_test
+        ports:
+            - "5432:5432"
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready"]
+            interval: 10s
+            timeout: 5s
+            retries: 3
