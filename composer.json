@@ -1,0 +1,141 @@
+{
+    "name": "cline/ancestry",
+    "description": "Closure table hierarchies for Eloquent models with O(1) ancestor/descendant queries.",
+    "license": "MIT",
+    "keywords": [
+        "ancestors",
+        "closure-table",
+        "descendants",
+        "eloquent",
+        "hierarchy",
+        "laravel",
+        "nested",
+        "tree"
+    ],
+    "authors": [
+        {
+            "name": "Brian Faust",
+            "email": "brian@cline.sh"
+        }
+    ],
+    "require": {
+        "php": "^8.5.0",
+        "cline/morphism": "^1.3.0",
+        "illuminate/container": "^12.0",
+        "illuminate/contracts": "^12.0",
+        "illuminate/database": "^12.0",
+        "illuminate/support": "^12.0",
+        "spatie/laravel-package-tools": "^1.92.7",
+        "cline/variable-keys": "^1.1"
+    },
+    "require-dev": {
+        "cline/coding-standard": "^1.5.8",
+        "orchestra/testbench": "^10.8",
+        "symfony/var-dumper": "^7.4.0"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Cline\\Ancestry\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "ergebnis/composer-normalize": true,
+            "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "aliases": {
+                "Ancestry": "Cline\\Ancestry\\Facades\\Ancestry"
+            },
+            "providers": [
+                "Cline\\Ancestry\\AncestryServiceProvider"
+            ]
+        }
+    },
+    "scripts": {
+        "lint": "ecs check --fix",
+        "refactor": "rector",
+        "test": "@test:morphs",
+        "test:lint": "ecs check",
+        "test:morphs": [
+            "@test:lint",
+            "@test:type-coverage",
+            "@test:unit",
+            "@test:types",
+            "@test:refactor"
+        ],
+        "test:numeric": [
+            "@test:lint",
+            "@test:type-coverage:numeric",
+            "@test:unit:numeric",
+            "@test:types",
+            "@test:refactor"
+        ],
+        "test:refactor": "rector --dry-run",
+        "test:seq:morphs": [
+            "@test:lint",
+            "@test:type-coverage",
+            "@test:unit:seq",
+            "@test:types",
+            "@test:refactor"
+        ],
+        "test:seq:numeric": [
+            "@test:lint",
+            "@test:type-coverage:numeric",
+            "@test:unit:seq:numeric",
+            "@test:types",
+            "@test:refactor"
+        ],
+        "test:seq:ulid": [
+            "@test:lint",
+            "@test:type-coverage:ulid",
+            "@test:unit:seq:ulid",
+            "@test:types",
+            "@test:refactor"
+        ],
+        "test:seq:uuid": [
+            "@test:lint",
+            "@test:type-coverage:uuid",
+            "@test:unit:seq:uuid",
+            "@test:types",
+            "@test:refactor"
+        ],
+        "test:type-coverage": "pest --parallel --min=90 --type-coverage --configuration=phpunit.morphs.xml",
+        "test:type-coverage:numeric": "pest --parallel --min=90 --type-coverage --configuration=phpunit.numeric.xml",
+        "test:type-coverage:ulid": "pest --parallel --min=90 --type-coverage --configuration=phpunit.ulid.xml",
+        "test:type-coverage:uuid": "pest --parallel --min=90 --type-coverage --configuration=phpunit.uuid.xml",
+        "test:types": "phpstan --memory-limit=4G",
+        "test:ulid": [
+            "@test:lint",
+            "@test:type-coverage:ulid",
+            "@test:unit:ulid",
+            "@test:types",
+            "@test:refactor"
+        ],
+        "test:unit": "pest --parallel --min=90 --coverage --configuration=phpunit.morphs.xml",
+        "test:unit:numeric": "pest --parallel --min=90 --coverage --configuration=phpunit.numeric.xml",
+        "test:unit:seq": "pest --parallel --processes=1 --min=90 --coverage --configuration=phpunit.morphs.xml",
+        "test:unit:seq:numeric": "pest --parallel --processes=1 --min=90 --coverage --configuration=phpunit.numeric.xml",
+        "test:unit:seq:ulid": "pest --parallel --processes=1 --min=90 --coverage --configuration=phpunit.ulid.xml",
+        "test:unit:seq:uuid": "pest --parallel --processes=1 --min=90 --coverage --configuration=phpunit.uuid.xml",
+        "test:unit:ulid": "pest --min=90 --coverage --configuration=phpunit.ulid.xml",
+        "test:unit:uuid": "pest --parallel --min=90 --coverage --configuration=phpunit.uuid.xml",
+        "test:uuid": [
+            "@test:lint",
+            "@test:type-coverage:uuid",
+            "@test:unit:uuid",
+            "@test:types",
+            "@test:refactor"
+        ]
+    }
+}
