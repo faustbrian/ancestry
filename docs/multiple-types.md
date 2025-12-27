@@ -1,8 +1,3 @@
----
-title: Multiple Ancestor Types
-description: Manage multiple independent hierarchical relationships simultaneously with Ancestry.
----
-
 Ancestry supports multiple hierarchy types, allowing a single model to participate in different hierarchical relationships simultaneously.
 
 ## Why Multiple Types?

@@ -1,8 +1,3 @@
----
-title: Basic Usage
-description: Learn fundamental operations for managing hierarchies with Ancestry.
----
-
 This guide covers the fundamental operations for managing hierarchies with Ancestry.
 
 ## Adding to a Ancestor

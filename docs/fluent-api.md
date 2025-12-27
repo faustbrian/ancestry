@@ -1,8 +1,3 @@
----
-title: Fluent API
-description: Master Ancestry's fluent, chainable API for managing hierarchies.
----
-
 Ancestry provides a fluent, chainable API for managing hierarchies. This guide covers both conductor types.
 
 ## For Model Conductor

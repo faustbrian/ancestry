@@ -1,8 +1,3 @@
----
-title: Events
-description: React to hierarchy changes with Ancestry's event system for Laravel applications.
----
-
 Ancestry dispatches events during hierarchy operations, enabling you to react to changes in your application.
 
 ## Available Events

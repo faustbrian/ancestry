@@ -1,8 +1,3 @@
----
-title: Configuration
-description: Configure Ancestry with all available options for your Laravel application.
----
-
 Ancestry is highly configurable. This guide covers all available options.
 
 ## Publishing Configuration

@@ -1,8 +1,3 @@
----
-title: Ancestor Snapshots
-description: Capture point-in-time hierarchy states for audit trails and historical reporting with Ancestry.
----
-
 Snapshots capture the full hierarchy chain at a specific point in time, preserving historical relationships even when hierarchies change. This is essential for audit trails, commission calculations, or any scenario where you need to know what the hierarchy looked like at a specific moment.
 
 ## Use Cases

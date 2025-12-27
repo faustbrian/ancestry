@@ -1,8 +1,3 @@
----
-title: Custom Key Mapping
-description: Use custom polymorphic key mappings with Ancestry for UUIDs, ULIDs, or business identifiers.
----
-
 Ancestry supports custom polymorphic key mappings, allowing you to use any column as the identifier in hierarchy relationships instead of the default primary key.
 
 ## Why Custom Key Mapping?

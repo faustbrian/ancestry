@@ -1,8 +1,3 @@
----
-title: Getting Started
-description: Install and configure Ancestry for closure table hierarchies in Laravel.
----
-
 Ancestry provides closure table hierarchies for Eloquent models with O(1) ancestor/descendant queries. This guide will help you get started quickly.
 
 ## Installation
