@@ -94,7 +94,7 @@ $seller->isAncestryDescendantOf($ceo, 'seller');
 
 ## Next Steps
 
-- [Basic Usage](/ancestry/basic-usage/) - Learn the core operations
-- [Fluent API](/ancestry/fluent-api/) - Master the chainable interface
-- [Configuration](/ancestry/configuration/) - Customize Ancestry for your needs
-- [Multiple Ancestor Types](/ancestry/multiple-types/) - Manage different hierarchies
+- [Basic Usage](./basic-usage.md) - Learn the core operations
+- [Fluent API](./fluent-api.md) - Master the chainable interface
+- [Configuration](./configuration.md) - Customize Ancestry for your needs
+- [Multiple Ancestor Types](./multiple-types.md) - Manage different hierarchies
