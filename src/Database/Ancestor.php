@@ -10,8 +10,8 @@
 namespace Cline\Ancestry\Database;
 
 use Cline\Ancestry\Database\Concerns\ConfiguresConnection;
-use Cline\VariableKeys\Database\Concerns\HasVariablePrimaryKey;
 use Cline\Ancestry\Database\Concerns\ConfiguresTable;
+use Cline\VariableKeys\Database\Concerns\HasVariablePrimaryKey;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

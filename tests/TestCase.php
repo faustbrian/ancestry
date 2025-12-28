@@ -11,6 +11,8 @@ namespace Tests;
 
 use Cline\Ancestry\AncestryServiceProvider;
 use Cline\Ancestry\Database\ModelRegistry;
+use Cline\VariableKeys\Enums\PrimaryKeyType;
+use Cline\VariableKeys\Facades\VariableKeys;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
@@ -45,6 +47,20 @@ abstract class TestCase extends BaseTestCase
 
         // Clear booted models to prevent stale event listeners
         Model::clearBootedModels();
+
+        // Register test models with VariableKeys
+        VariableKeys::map([
+            User::class => [
+                'primary_key_type' => PrimaryKeyType::from(
+                    env('ANCESTRY_PRIMARY_KEY_TYPE', 'id'),
+                ),
+            ],
+            Order::class => [
+                'primary_key_type' => PrimaryKeyType::from(
+                    env('ANCESTRY_PRIMARY_KEY_TYPE', 'id'),
+                ),
+            ],
+        ]);
 
         // Configure morph key map for test models
         $this->app->make(ModelRegistry::class)->morphKeyMap([

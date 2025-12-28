@@ -8,7 +8,7 @@
  */
 
 use Cline\Ancestry\Enums\MorphType;
-use Cline\Ancestry\Enums\PrimaryKeyType;
+use Cline\VariableKeys\Enums\PrimaryKeyType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Config;

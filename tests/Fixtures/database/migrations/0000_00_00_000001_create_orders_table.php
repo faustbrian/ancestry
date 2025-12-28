@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-use Cline\Ancestry\Enums\PrimaryKeyType;
+use Cline\VariableKeys\Enums\PrimaryKeyType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Config;
@@ -19,7 +19,7 @@ return new class() extends Migration
     {
         /** @var string $configValue */
         $configValue = Config::get('ancestry.primary_key_type', 'id');
-        $primaryKeyType = PrimaryKeyType::tryFrom($configValue) ?? PrimaryKeyType::Id;
+        $primaryKeyType = PrimaryKeyType::tryFrom($configValue) ?? PrimaryKeyType::ID;
 
         Schema::create('orders', function (Blueprint $table) use ($primaryKeyType): void {
             match ($primaryKeyType) {

@@ -88,16 +88,15 @@ final class AncestryServiceProvider extends PackageServiceProvider
      */
     private function registerVariableKeys(): void
     {
+        /** @var string $primaryKeyType */
+        $primaryKeyType = Config::get('ancestry.primary_key_type', 'id');
+
         VariableKeys::map([
             Ancestor::class => [
-                'primary_key_type' => PrimaryKeyType::from(
-                    Config::get('ancestry.primary_key_type', 'id')
-                ),
+                'primary_key_type' => PrimaryKeyType::from($primaryKeyType),
             ],
             AncestorSnapshot::class => [
-                'primary_key_type' => PrimaryKeyType::from(
-                    Config::get('ancestry.primary_key_type', 'id')
-                ),
+                'primary_key_type' => PrimaryKeyType::from($primaryKeyType),
             ],
         ]);
     }
