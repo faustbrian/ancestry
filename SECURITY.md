@@ -16,7 +16,7 @@ Only the latest stable release receives security updates. Security fixes are gen
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in this project, please report it through our [GitHub Security Advisories](https://github.com/faustbrian/:package_name/security) page. This ensures that sensitive information is handled securely.
+If you discover a security vulnerability in this project, please report it through our [GitHub Security Advisories](https://git.cline.sh/faustbrian/:package_name/security) page. This ensures that sensitive information is handled securely.
 
 ### What to Include
 
