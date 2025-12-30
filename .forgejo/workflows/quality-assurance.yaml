@@ -24,15 +24,18 @@ jobs:
           - laravel: '12'
             testbench: '^10.0'
     steps:
-      - uses: https://github.com/actions/checkout@v6
-      - uses: https://github.com/shivammathur/setup-php@v2
+      - name: Check out code
+        uses: https://github.com/actions/checkout@v6
+      - name: Set up PHP
+        uses: https://github.com/shivammathur/setup-php@v2
         with:
           php-version: '8.5'
           coverage: pcov
           tools: composer:v2
       - name: Install dependencies
         run: composer install --no-progress --no-interaction --ignore-platform-reqs
-      - run: vendor/bin/pest --coverage --min=80
+      - name: Run tests with coverage
+        run: vendor/bin/pest --coverage --min=80
 
   phpstan:
     name: PHPStan on ${{ matrix.php }} ${{ matrix.composer-flags }}
@@ -42,13 +45,16 @@ jobs:
         php: ['8.5']
         composer-flags: ['']
     steps:
-      - uses: https://github.com/actions/checkout@v6
-      - uses: https://github.com/shivammathur/setup-php@v2
+      - name: Check out code
+        uses: https://github.com/actions/checkout@v6
+      - name: Set up PHP
+        uses: https://github.com/shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           tools: composer:v2
       - run: composer install --no-progress --ignore-platform-reqs ${{ matrix.composer-flags }}
-      - run: vendor/bin/phpstan
+      - name: Run static analysis
+        run: vendor/bin/phpstan
 
   ecs:
     name: Code Style on ${{ matrix.php }} ${{ matrix.composer-flags }}
@@ -58,13 +64,16 @@ jobs:
         php: ['8.5']
         composer-flags: ['']
     steps:
-      - uses: https://github.com/actions/checkout@v6
-      - uses: https://github.com/shivammathur/setup-php@v2
+      - name: Check out code
+        uses: https://github.com/actions/checkout@v6
+      - name: Set up PHP
+        uses: https://github.com/shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           tools: composer:v2
       - run: composer install --no-progress --ignore-platform-reqs ${{ matrix.composer-flags }}
-      - run: vendor/bin/ecs check
+      - name: Check code style
+        run: vendor/bin/ecs check
 
   rector:
     name: Rector on ${{ matrix.php }} ${{ matrix.composer-flags }}
@@ -74,10 +83,13 @@ jobs:
         php: ['8.5']
         composer-flags: ['']
     steps:
-      - uses: https://github.com/actions/checkout@v6
-      - uses: https://github.com/shivammathur/setup-php@v2
+      - name: Check out code
+        uses: https://github.com/actions/checkout@v6
+      - name: Set up PHP
+        uses: https://github.com/shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
           tools: composer:v2
       - run: composer install --no-progress --ignore-platform-reqs ${{ matrix.composer-flags }}
-      - run: vendor/bin/rector --dry-run
+      - name: Run Rector checks
+        run: vendor/bin/rector --dry-run
