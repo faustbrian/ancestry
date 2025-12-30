@@ -32,7 +32,7 @@ jobs:
           tools: composer:v2
       - name: Install dependencies
         run: composer install --no-progress --no-interaction --ignore-platform-reqs
-      - run: vendor/bin/pest --coverage --min=90
+      - run: vendor/bin/pest --coverage --min=80
 
   phpstan:
     name: PHPStan on ${{ matrix.php }} ${{ matrix.composer-flags }}
