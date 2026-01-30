@@ -15,7 +15,6 @@ use Cline\Ancestry\Contracts\AncestryService;
 use Cline\Ancestry\Contracts\AncestryType;
 use Cline\Ancestry\Exceptions\CircularReferenceException;
 use Cline\Ancestry\Exceptions\MaxDepthExceededException;
-use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -29,7 +28,6 @@ use Illuminate\Support\Collection;
  *
  * @psalm-immutable
  */
-#[Singleton()]
 final readonly class AncestryManager
 {
     /**

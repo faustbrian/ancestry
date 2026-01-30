@@ -64,6 +64,9 @@ final class AncestryServiceProvider extends PackageServiceProvider
             AncestryServiceContract::class,
             AncestryService::class,
         );
+
+        // Register AncestryManager as singleton for Laravel 10-11 compatibility
+        $this->app->singleton(AncestryManager::class);
     }
 
     /**
