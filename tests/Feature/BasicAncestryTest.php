@@ -132,6 +132,24 @@ describe('Basic Ancestor Operations', function (): void {
         expect(Ancestry::getDirectParent($child, 'seller')->id)->toBe($parent->id);
     });
 
+    test('adding a model already referenced as a parent does not duplicate self reference', function (): void {
+        $parent = user();
+        $child = user();
+
+        Ancestry::addToAncestry($child, 'seller', $parent);
+        Ancestry::addToAncestry($parent, 'seller');
+
+        $selfReferences = Ancestor::query()
+            ->where('ancestor_type', $parent->getMorphClass())
+            ->where('ancestor_id', getModelKey($parent))
+            ->where('descendant_type', $parent->getMorphClass())
+            ->where('descendant_id', getModelKey($parent))
+            ->where('type', 'seller')
+            ->get();
+
+        expect($selfReferences)->toHaveCount(1);
+    });
+
     test('can get ancestors', function (): void {
         [$grandparent, $parent, $child] = createAncestorChain(3);
 

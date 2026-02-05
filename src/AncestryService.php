@@ -78,14 +78,7 @@ final readonly class AncestryService implements AncestryServiceContract
             $modelKey = $this->registry->getModelKeyValue($model);
 
             // Self-referencing row (depth 0) - every node references itself
-            $this->createAncestor([
-                'ancestor_type' => $morphClass,
-                'ancestor_id' => $modelKey,
-                'descendant_type' => $morphClass,
-                'descendant_id' => $modelKey,
-                'depth' => 0,
-                'type' => $typeValue,
-            ]);
+            $this->ensureSelfReference($model, $typeValue);
 
             if (!$parent instanceof Model) {
                 return;
