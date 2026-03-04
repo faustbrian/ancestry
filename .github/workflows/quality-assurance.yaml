@@ -1,0 +1,95 @@
+---
+name: Quality Assurance
+on:
+  push:
+    branches: ['main']
+  pull_request: ~
+
+jobs:
+  tests:
+    name: Tests (L${{ matrix.laravel }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        laravel: ['10', '11', '12']
+        include:
+          # Laravel 10
+          - laravel: '10'
+            testbench: '^8.0'
+          # Laravel 11
+          - laravel: '11'
+            testbench: '^9.0'
+          # Laravel 12
+          - laravel: '12'
+            testbench: '^10.0'
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: pcov
+          tools: composer:v2
+      - name: Install dependencies
+        run: composer install --no-progress --no-interaction --ignore-platform-reqs
+      - name: Run tests with coverage
+        run: vendor/bin/pest --coverage --min=80
+
+  phpstan:
+    name: PHPStan on ${{ matrix.php }} ${{ matrix.composer-flags }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.5']
+        composer-flags: ['']
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+      - run: composer install --no-progress --ignore-platform-reqs ${{ matrix.composer-flags }}
+      - name: Run static analysis
+        run: vendor/bin/phpstan
+
+  ecs:
+    name: Code Style on ${{ matrix.php }} ${{ matrix.composer-flags }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.5']
+        composer-flags: ['']
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+      - run: composer install --no-progress --ignore-platform-reqs ${{ matrix.composer-flags }}
+      - name: Check code style
+        run: vendor/bin/ecs check
+
+  rector:
+    name: Rector on ${{ matrix.php }} ${{ matrix.composer-flags }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.5']
+        composer-flags: ['']
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+      - run: composer install --no-progress --ignore-platform-reqs ${{ matrix.composer-flags }}
+      - name: Run Rector checks
+        run: vendor/bin/rector --dry-run
