@@ -20,8 +20,9 @@
     ],
     "require": {
         "php": "^8.5.0",
-        "cline/morphism": "^2.0",
-        "cline/variable-keys": "^2.0",
+        "cline/morphism": "^2.0.1",
+        "cline/variable-keys": "^2.0.1",
+        "facade/ignition-contracts": "^1.0.2",
         "illuminate/container": "^10.0 || ^11.0 || ^12.0 || ^13.0",
         "illuminate/contracts": "^10.0 || ^11.0 || ^12.0 || ^13.0",
         "illuminate/database": "^10.0 || ^11.0 || ^12.0 || ^13.0",
@@ -29,7 +30,7 @@
         "spatie/laravel-package-tools": "^1.93.0"
     },
     "require-dev": {
-        "cline/coding-standard": "^2.0",
+        "cline/coding-standard": "^2.0.1",
         "orchestra/testbench": "^8.0 || ^9.0 || ^10.9",
         "symfony/var-dumper": "^6.0 || ^7.4.6"
     },
