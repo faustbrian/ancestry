@@ -1,13 +1,15 @@
 ## Table of Contents
 
-1. Getting Started (`docs/README.md`)
-2. Basic Usage (`docs/basic-usage.md`)
-3. Fluent API (`docs/fluent-api.md`)
-4. Configuration (`docs/configuration.md`)
-5. Multiple Hierarchy Types (`docs/multiple-types.md`)
-6. Custom Key Mapping (`docs/custom-key-mapping.md`)
-7. Events (`docs/events.md`)
-8. Snapshots (`docs/snapshots.md`)
+1. [Getting Started](#doc-docs-readme) (`docs/README.md`)
+2. [Basic Usage](#doc-docs-basic-usage) (`docs/basic-usage.md`)
+3. [Fluent API](#doc-docs-fluent-api) (`docs/fluent-api.md`)
+4. [Configuration](#doc-docs-configuration) (`docs/configuration.md`)
+5. [Multiple Hierarchy Types](#doc-docs-multiple-types) (`docs/multiple-types.md`)
+6. [Custom Key Mapping](#doc-docs-custom-key-mapping) (`docs/custom-key-mapping.md`)
+7. [Events](#doc-docs-events) (`docs/events.md`)
+8. [Snapshots](#doc-docs-snapshots) (`docs/snapshots.md`)
+<a id="doc-docs-readme"></a>
+
 Ancestry provides closure table hierarchies for Eloquent models with O(1) ancestor/descendant queries. This guide will help you get started quickly.
 
 ## Installation
@@ -99,10 +101,12 @@ $seller->isAncestryDescendantOf($ceo, 'seller');
 
 ## Next Steps
 
-- [Basic Usage](./basic-usage.md) - Learn the core operations
-- [Fluent API](./fluent-api.md) - Master the chainable interface
-- [Configuration](./configuration.md) - Customize Ancestry for your needs
-- [Multiple Ancestor Types](./multiple-types.md) - Manage different hierarchies
+- [Basic Usage](#doc-docs-basic-usage) - Learn the core operations
+- [Fluent API](#doc-docs-fluent-api) - Master the chainable interface
+- [Configuration](#doc-docs-configuration) - Customize Ancestry for your needs
+- [Multiple Ancestor Types](#doc-docs-multiple-types) - Manage different hierarchies
+
+<a id="doc-docs-basic-usage"></a>
 
 This guide covers the fundamental operations for managing hierarchies with Ancestry.
 
@@ -291,6 +295,8 @@ $seller->attachToAncestryParent($parent, 'seller');
 $seller->moveToAncestryParent($newParent, 'seller');
 $seller->removeFromAncestry('seller');
 ```
+
+<a id="doc-docs-fluent-api"></a>
 
 Ancestry provides a fluent, chainable API for managing hierarchies. This guide covers both conductor types.
 
@@ -485,6 +491,8 @@ Always set the type first:
 ```php
 Ancestry::for($seller)->type('seller')->ancestors(); // Works!
 ```
+
+<a id="doc-docs-configuration"></a>
 
 Ancestry is highly configurable. This guide covers all available options.
 
@@ -706,6 +714,8 @@ return [
 ];
 ```
 
+<a id="doc-docs-multiple-types"></a>
+
 Ancestry supports multiple hierarchy types, allowing a single model to participate in different hierarchical relationships simultaneously.
 
 ## Why Multiple Types?
@@ -899,6 +909,8 @@ SELECT * FROM hierarchies WHERE type = 'reseller';
 
 This allows efficient querying within a type while maintaining isolation between types.
 
+<a id="doc-docs-custom-key-mapping"></a>
+
 Ancestry supports custom polymorphic key mappings, allowing you to use any column as the identifier in hierarchy relationships instead of the default primary key.
 
 ## Why Custom Key Mapping?
@@ -1085,6 +1097,8 @@ try {
     Log::warning($e->getMessage());
 }
 ```
+
+<a id="doc-docs-events"></a>
 
 Ancestry dispatches events during hierarchy operations, enabling you to react to changes in your application.
 
@@ -1334,6 +1348,8 @@ test('something without events', function () {
     // Your test code...
 });
 ```
+
+<a id="doc-docs-snapshots"></a>
 
 Snapshots capture the full hierarchy chain at a specific point in time, preserving historical relationships even when hierarchies change. This is essential for audit trails, commission calculations, or any scenario where you need to know what the hierarchy looked like at a specific moment.
 

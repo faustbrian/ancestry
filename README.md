@@ -13,14 +13,14 @@ Ancestry implements the closure table pattern for managing hierarchical relation
 
 ## Documentation
 
-- [Getting Started](cookbook/getting-started.md) - Installation, requirements, and quick start
-- [Basic Usage](cookbook/basic-usage.md) - Core operations and trait methods
-- [Fluent API](cookbook/fluent-api.md) - Chainable, expressive interface
-- [Configuration](cookbook/configuration.md) - Customize keys, morphs, depth limits
-- [Multiple Hierarchy Types](cookbook/multiple-types.md) - One model, many hierarchies
-- [Custom Key Mapping](cookbook/custom-key-mapping.md) - Advanced key configuration
-- [Events](cookbook/events.md) - React to hierarchy changes
-- [Snapshots](cookbook/snapshots.md) - Capture point-in-time hierarchy state
+- [Getting Started](DOCS.md#doc-docs-readme) - Installation, requirements, and quick start
+- [Basic Usage](DOCS.md#doc-docs-basic-usage) - Core operations and trait methods
+- [Fluent API](DOCS.md#doc-docs-fluent-api) - Chainable, expressive interface
+- [Configuration](DOCS.md#doc-docs-configuration) - Customize keys, morphs, depth limits
+- [Multiple Hierarchy Types](DOCS.md#doc-docs-multiple-types) - One model, many hierarchies
+- [Custom Key Mapping](DOCS.md#doc-docs-custom-key-mapping) - Advanced key configuration
+- [Events](DOCS.md#doc-docs-events) - React to hierarchy changes
+- [Snapshots](DOCS.md#doc-docs-snapshots) - Capture point-in-time hierarchy state
 
 ## Change log
 
