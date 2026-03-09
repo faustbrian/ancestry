@@ -1,13 +1,13 @@
 ## Table of Contents
 
-1. [Getting Started](#doc-docs-readme) (`docs/README.md`)
-2. [Basic Usage](#doc-docs-basic-usage) (`docs/basic-usage.md`)
-3. [Fluent API](#doc-docs-fluent-api) (`docs/fluent-api.md`)
-4. [Configuration](#doc-docs-configuration) (`docs/configuration.md`)
-5. [Multiple Hierarchy Types](#doc-docs-multiple-types) (`docs/multiple-types.md`)
-6. [Custom Key Mapping](#doc-docs-custom-key-mapping) (`docs/custom-key-mapping.md`)
-7. [Events](#doc-docs-events) (`docs/events.md`)
-8. [Snapshots](#doc-docs-snapshots) (`docs/snapshots.md`)
+1. [Getting Started](#doc-docs-readme)
+2. [Basic Usage](#doc-docs-basic-usage)
+3. [Fluent API](#doc-docs-fluent-api)
+4. [Configuration](#doc-docs-configuration)
+5. [Multiple Hierarchy Types](#doc-docs-multiple-types)
+6. [Custom Key Mapping](#doc-docs-custom-key-mapping)
+7. [Events](#doc-docs-events)
+8. [Snapshots](#doc-docs-snapshots)
 <a id="doc-docs-readme"></a>
 
 Ancestry provides closure table hierarchies for Eloquent models with O(1) ancestor/descendant queries. This guide will help you get started quickly.
