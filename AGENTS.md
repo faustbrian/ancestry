@@ -33,9 +33,9 @@ intentionally.
 - You MUST add or update automated tests for every bug fix and every
   user-visible behavior change.
 - You MUST prefer regression coverage before changing existing behavior.
-- You MUST run `make refactor` before pushing.
-- You MUST run `make lint` before pushing.
-- You MUST run `make test` before pushing.
+- You MUST run `just refactor` before pushing.
+- You MUST run `just lint` before pushing.
+- You MUST run `just test` before pushing.
 - You MUST report the exact verification commands you ran when handing
   work off for review.
 
