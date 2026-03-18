@@ -29,7 +29,7 @@
     "require-dev": {
         "cline/coding-standard": "^2.0.1",
         "orchestra/testbench": "^8.0 || ^9.0 || ^10.9",
-        "symfony/var-dumper": "^6.0 || ^7.4.6"
+        "symfony/var-dumper": "^6.0 || ^7.4.6 || ^8.0"
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
