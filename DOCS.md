@@ -270,6 +270,28 @@ Ancestry::moveToParent($manager, null, 'seller');
 Ancestry::removeFromAncestry($seller, 'seller');
 ```
 
+### Deleting Models
+
+Deleting a model that uses the `HasAncestry` trait keeps the closure table
+consistent:
+
+- A model with no descendants in any ancestry type is deleted together with its
+  own rows: its self rows and its paths to its ancestors, in every type.
+- A model that still has descendants in any type cannot be deleted. `delete()`
+  throws `NodeHasDescendantsException` naming the blocking types, and nothing is
+  deleted. Delete, move or detach the descendants first.
+- A soft delete leaves the rows in place, so `restore()` keeps the hierarchy.
+  Only a force delete removes rows or throws.
+- Ancestry snapshots are kept, and no ancestry events are dispatched.
+
+```php
+$child->delete();  // removes the child's rows
+$parent->delete(); // throws NodeHasDescendantsException while children remain
+```
+
+Deletes that skip model events, such as query builder deletes,
+`deleteQuietly()` or `withoutEvents()`, leave the rows behind.
+
 ## Using the Trait
 
 All operations are also available directly on models using the `HasAncestry` trait:
@@ -491,6 +513,10 @@ Always set the type first:
 ```php
 Ancestry::for($seller)->type('seller')->ancestors(); // Works!
 ```
+
+Deleting a model that still has descendants throws
+`Cline\Ancestry\Exceptions\NodeHasDescendantsException`. Like every package
+exception it implements `Cline\Ancestry\Exceptions\AncestryException`.
 
 <a id="doc-docs-configuration"></a>
 

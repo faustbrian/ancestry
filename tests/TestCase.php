@@ -19,6 +19,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 use Tests\Fixtures\Order;
+use Tests\Fixtures\SoftDeletableUser;
 use Tests\Fixtures\User;
 
 use function env;
@@ -56,11 +57,17 @@ abstract class TestCase extends BaseTestCase
                     env('ANCESTRY_PRIMARY_KEY_TYPE', 'id'),
                 ),
             ],
+            SoftDeletableUser::class => [
+                'primary_key_type' => PrimaryKeyType::from(
+                    env('ANCESTRY_PRIMARY_KEY_TYPE', 'id'),
+                ),
+            ],
         ]);
         // Configure morph key map for test models
         $this->app->make(ModelRegistry::class)->morphKeyMap([
             User::class => 'id',
             Order::class => 'id',
+            SoftDeletableUser::class => 'id',
         ]);
     }
 
