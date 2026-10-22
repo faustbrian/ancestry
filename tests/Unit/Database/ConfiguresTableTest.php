@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+use Tests\Fixtures\ConfiguredTableModel;
 use Tests\Fixtures\UnconfiguredTableModel;
 
 test('a model without the table properties falls back to the defaults', function (): void {
@@ -17,4 +18,13 @@ test('a model without the table properties falls back to the defaults', function
 
     config(['ancestry.table_name' => 'custom_ancestors']);
     expect($model->getTable())->toBe('custom_ancestors');
+});
+
+test('a model with its own table properties uses them', function (): void {
+    $model = new ConfiguredTableModel();
+
+    expect($model->getTable())->toBe('custom_default');
+
+    config(['ancestry.custom_key' => 'custom_configured']);
+    expect($model->getTable())->toBe('custom_configured');
 });

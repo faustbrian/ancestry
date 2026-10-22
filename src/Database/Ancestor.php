@@ -63,6 +63,19 @@ final class Ancestor extends Model
     ];
 
     /**
+     * The attributes that should be cast.
+     *
+     * Kept as a property because Model::casts() only exists from Laravel 11,
+     * which the package does not yet require.
+     *
+     * @var array<string, string>
+     */
+    #[Override()]
+    protected $casts = [
+        'depth' => 'integer',
+    ];
+
+    /**
      * The config key for table name resolution.
      */
     private string $configTableKey = 'table_name';
@@ -124,19 +137,6 @@ final class Ancestor extends Model
     public function descendantRelation(): MorphTo
     {
         return $this->morphTo('descendant');
-    }
-
-    /**
-     * The attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    #[Override()]
-    protected function casts(): array
-    {
-        return [
-            'depth' => 'integer',
-        ];
     }
 
     /**

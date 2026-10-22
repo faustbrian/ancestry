@@ -247,7 +247,7 @@ describe('Model delete', function (): void {
         }
     });
 
-    test('a child attached while its parent is deleted keeps its complete paths', function (): void {
+    test('a child attached while its parent is deleted fails the delete', function (): void {
         [$grandparent, $parent] = createAncestorChain(2);
         $child = user();
         User::deleting(function (User $deleting) use ($parent, $child): void {
@@ -258,18 +258,26 @@ describe('Model delete', function (): void {
             Ancestry::addToAncestry($child, 'seller', $parent);
         });
 
-        expect($parent->delete())->toBeTrue();
+        expect(fn () => DB::transaction(fn (): ?bool => $parent->delete()))
+            ->toThrow(NodeHasDescendantsException::class);
 
-        $childPaths = DB::table(
-            new Ancestor()->getTable(),
-        )
-            ->where('descendant_type', $child->getMorphClass())
-            ->where('descendant_id', $child->getKey())
-            ->orderBy('depth')
-            ->pluck('depth')
-            ->all();
-        expect($childPaths)->toEqual([0, 1, 2]);
-        expect(Ancestry::isAncestorOf($grandparent, $child, 'seller'))->toBeTrue();
+        expect(User::query()->whereKey($parent->getKey())->exists())->toBeTrue();
+        expect(Ancestry::isAncestorOf($grandparent, $child, 'seller'))->toBeFalse();
+        expect(ancestorRowIdsFor($parent))->toHaveCount(2);
+    });
+
+    test('an earlier deleting listener that returns a value cannot skip the descendant check', function (): void {
+        Model::clearBootedModels();
+        User::deleting(fn (): int => 0);
+        [$parent, $child] = createAncestorChain(2);
+        $before = ancestorRowIds();
+
+        expect(fn () => DB::transaction(fn (): ?bool => $parent->delete()))
+            ->toThrow(NodeHasDescendantsException::class);
+
+        expect(User::query()->whereKey($parent->getKey())->exists())->toBeTrue();
+        expect(ancestorRowIds())->toBe($before);
+        expect(Ancestry::isAncestorOf($parent, $child, 'seller'))->toBeTrue();
     });
 
     test('a model loaded without its morph key column cannot be deleted', function (): void {

@@ -67,6 +67,10 @@ trait HasAncestry
                 return;
             }
 
+            // The check above is skipped when an earlier listener returns a
+            // value (the dispatcher halts on it) or a child is attached
+            // meanwhile, so check again before removing anything.
+            $model->ensureHasNoAncestryDescendants();
             $model->deleteOwnAncestryRows();
         });
     }

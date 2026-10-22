@@ -326,21 +326,24 @@ Limits:
 - With an enforced morph map or morph key map, every class using the trait,
   subclasses included, must be mapped to be deleted, even when it was never
   in a hierarchy.
-- `Prunable` deletes through `delete()` or `forceDelete()`, so a model with
-  descendants throws and stops that prune run.
+- `Prunable` deletes through `delete()` or `forceDelete()`. A model with
+  descendants is reported and skipped on every prune run, after its
+  `pruning()` method has already run.
 - Both the check and the cleanup read the model's morph key column (see
   morph key maps). A model loaded without that column cannot be deleted; load
   it before calling `delete()`.
 - The check and the cleanup take no locks, and `attachToParent()` does not
-  check that the parent still exists. A child attached to the model while or
-  after it is deleted, for example through a stale instance, keeps or gets
-  paths to the deleted model, so serialize deletes with attaches to the same
-  parent when both can run at once.
-- The rows are removed after the model row, in the `deleted` event, and a
-  refused delete does not undo what earlier `deleting` listeners wrote. Run
-  the delete inside `DB::transaction()` (or use `deleteOrFail()`) so either
-  failure rolls everything back. This only covers the rows when
-  `ancestry.connection` is the model's connection.
+  check that the parent still exists. A child attached after the delete has
+  committed, for example through a stale instance, gets paths to the deleted
+  model, so serialize deletes with attaches to the same parent when both can
+  run at once.
+- The descendants are checked again in the `deleted` event, after the model
+  row is gone, because an earlier `deleting` listener that returns a value
+  stops Laravel from calling the trait's check, and a child can be attached
+  meanwhile. That second refusal, a failed cleanup, and anything earlier
+  `deleting` listeners wrote are only undone when the delete runs inside
+  `DB::transaction()` (or `deleteOrFail()`), so delete inside one. This only
+  covers the rows when `ancestry.connection` is the model's connection.
 - The descendant check runs in the trait's own listener, registered when the
   model boots. `booted()` listeners and observers run after it, so they cannot
   delete the descendants first; delete them before calling `delete()` on the

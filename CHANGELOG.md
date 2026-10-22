@@ -26,7 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hierarchy; only a force delete removes rows or throws. Deletes that skip
   model events (query builder deletes, `deleteQuietly()`, `withoutEvents()`)
   leave the rows behind.
-- `Ancestor` declares its casts in `casts()` and `ConfiguresTable` reads its
-  properties without null coalescing on typed properties, so current PHPStan
-  and Rector pass. Models using `ConfiguresTable` without the properties still
-  fall back to `table_name` and `hierarchies`.
+- Deleting a model that uses `HasAncestry` now runs closure-table queries and
+  can fail where it used to succeed: under an enforced morph map or morph key
+  map every class using the trait (subclasses included) must be mapped, and a
+  model loaded without its morph key column cannot be deleted. See "Deleting
+  Models" in DOCS.md for the remaining limits.
+- `ConfiguresTable` reads its table properties without null coalescing on
+  typed properties, so current PHPStan passes. Models using it without the
+  properties still fall back to `table_name` and `hierarchies`.
