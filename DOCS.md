@@ -291,8 +291,8 @@ $parent->delete(); // throws NodeHasDescendantsException while children remain
 ```
 
 The check reads closure rows, not models. Rows left behind by a descendant that
-was deleted without this cleanup (for example before 2.1.0, or by a query
-builder delete) still block its ancestors. Remove them by the missing
+was deleted without this cleanup (before 2.1.0, or by any delete that skips
+model events) still block its ancestors. Remove them by the missing
 descendant's morph type and key:
 
 ```php
@@ -306,8 +306,12 @@ Ancestor::query()
 
 Limits:
 
-- Deletes that skip model events, such as query builder deletes,
-  `deleteQuietly()` or `withoutEvents()`, leave the rows behind.
+- Deletes that skip model events leave the rows behind: query builder deletes,
+  `deleteQuietly()`, `withoutEvents()`, `MassPrunable`, raw SQL, `truncate`,
+  and rows removed by a database `ON DELETE CASCADE`.
+- Both the check and the cleanup read the model's morph key column (see
+  morph key maps). A model loaded without that column cannot be deleted; load
+  it before calling `delete()`.
 - The check and the cleanup take no locks. A child attached to the model while
   it is being deleted keeps its paths to the deleted model, so serialize
   deletes with attaches to the same parent when both can run at once.
@@ -315,10 +319,10 @@ Limits:
   delete inside `DB::transaction()` when a failed cleanup must also keep the
   model. This only covers the rows when `ancestry.connection` is the model's
   connection.
-- The descendant check runs in the trait's own listener, before your model's
-  `booted()` listeners and observers. A listener that deletes the descendants
-  itself therefore runs too late: delete them before calling `delete()` on the
-  parent.
+- The descendant check runs in the trait's own listener, which is registered
+  when the model boots, before `booted()` listeners and observers. Those run
+  too late to delete the descendants first, so delete them before calling
+  `delete()` on the parent.
 
 ## Using the Trait
 
