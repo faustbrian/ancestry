@@ -26,3 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hierarchy; only a force delete removes rows or throws. Deletes that skip
   model events (query builder deletes, `deleteQuietly()`, `withoutEvents()`)
   leave the rows behind.
+- `Ancestor` declares its casts in `casts()` and `ConfiguresTable` reads its
+  properties without null coalescing on typed properties, so current PHPStan
+  and Rector pass. Models using `ConfiguresTable` without the properties still
+  fall back to `table_name` and `hierarchies`.

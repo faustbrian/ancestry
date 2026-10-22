@@ -48,16 +48,6 @@ final class Ancestor extends Model
     use ConfiguresTable;
 
     /**
-     * The config key for table name resolution.
-     */
-    protected string $configTableKey = 'table_name';
-
-    /**
-     * The default table name if not configured.
-     */
-    protected string $defaultTable = 'hierarchies';
-
-    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -71,6 +61,16 @@ final class Ancestor extends Model
         'depth',
         'type',
     ];
+
+    /**
+     * The config key for table name resolution.
+     */
+    private string $configTableKey = 'table_name';
+
+    /**
+     * The default table name if not configured.
+     */
+    private string $defaultTable = 'hierarchies';
 
     /**
      * Get the ancestor model instance.
@@ -131,6 +131,7 @@ final class Ancestor extends Model
      *
      * @return array<string, string>
      */
+    #[Override()]
     protected function casts(): array
     {
         return [
