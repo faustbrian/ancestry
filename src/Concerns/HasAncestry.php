@@ -390,6 +390,8 @@ trait HasAncestry
             return $original;
         }
 
+        // No stored value, e.g. the key column was not selected: defer to the
+        // registry, which refuses a missing key rather than matching nothing.
         return $registry->getModelKeyValue($this);
     }
 

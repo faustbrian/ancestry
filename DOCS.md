@@ -688,7 +688,11 @@ Events dispatched:
 - `NodeAttached` - When a node is attached to a parent
 - `NodeDetached` - When a node is detached from its parent
 - `NodeMoved` - When a node is moved to a new parent
-- `NodeRemoved` - When a node is completely removed
+- `NodeRemoved` - When a node is completely removed with `removeFromAncestry()`
+
+Deleting a model that uses `HasAncestry` removes its rows without dispatching
+any of these events, so listeners that track hierarchy changes also need to
+handle the model's own `deleted` event.
 
 ## Caching
 

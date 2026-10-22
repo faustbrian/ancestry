@@ -355,7 +355,7 @@ describe('Model delete', function (): void {
 
         expect(User::query()->whereKey($leaf->getKey())->exists())->toBeTrue();
         expect(ancestorRowIds())->toBe($before);
-    })->skip(fn (): bool => config('database.default') !== 'testing' && DB::getDriverName() !== 'sqlite', 'Uses an SQLite trigger');
+    })->skip(fn (): bool => DB::getDriverName() !== 'sqlite', 'Uses an SQLite trigger');
 
     test('deleting a leaf keeps ancestry snapshots that reference it', function (): void {
         [$grandparent, $parent, $leaf] = createAncestorChain(3);
@@ -477,6 +477,19 @@ describe('Model delete', function (): void {
 
             expect(SoftDeletableUser::withTrashed()->whereKey($child->getKey())->exists())->toBeFalse();
             expect(ancestorRowIdsFor($child))->toBe([]);
+        });
+
+        test('a soft delete with deferred events keeps the rows', function (): void {
+            $parent = SoftDeletableUser::query()->create();
+            $child = SoftDeletableUser::query()->create();
+            Ancestry::addToAncestry($parent, 'seller');
+            Ancestry::addToAncestry($child, 'seller', $parent);
+            $before = ancestorRowIds();
+
+            resolve(Dispatcher::class)->defer(fn (): ?bool => $parent->delete());
+
+            expect($parent->trashed())->toBeTrue();
+            expect(ancestorRowIds())->toBe($before);
         });
 
         test('force deleting a trashed leaf removes its rows', function (): void {
