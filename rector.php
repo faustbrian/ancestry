@@ -9,12 +9,17 @@
 use Cline\CodingStandard\Rector\Factory;
 use Rector\DeadCode\Rector\Stmt\RemoveUnreachableStatementRector;
 use Rector\CodingStyle\Rector\ClassLike\NewlineBetweenClassLikeStmtsRector;
+use RectorLaravel\Rector\Class_\ModelCastsPropertyToCastsMethodRector;
 use RectorLaravel\Rector\MethodCall\ContainerBindConcreteWithClosureOnlyRector;
 return Factory::create(
     paths: [__DIR__.'/src', __DIR__.'/tests'],
     skip: [
         RemoveUnreachableStatementRector::class => [__DIR__.'/tests'  ],
               ContainerBindConcreteWithClosureOnlyRector::class,
+        // Model::casts() needs Laravel 11; composer.json still allows 10.
+        ModelCastsPropertyToCastsMethodRector::class => [
+            __DIR__.'/src/Database/Ancestor.php',
+        ],
         NewlineBetweenClassLikeStmtsRector::class => [
             __DIR__.'/src/Database/Ancestor.php',
             __DIR__.'/src/Database/AncestorSnapshot.php',

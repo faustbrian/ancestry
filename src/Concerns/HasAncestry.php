@@ -12,11 +12,17 @@ namespace Cline\Ancestry\Concerns;
 use Cline\Ancestry\Contracts\AncestryService;
 use Cline\Ancestry\Contracts\AncestryType;
 use Cline\Ancestry\Database\Ancestor;
+use Cline\Ancestry\Database\ModelRegistry;
+use Cline\Ancestry\Exceptions\NodeHasDescendantsException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 
+use function is_int;
+use function is_string;
+use function method_exists;
 use function resolve;
 
 /**
@@ -32,6 +38,47 @@ use function resolve;
  */
 trait HasAncestry
 {
+    /**
+     * Keep the closure table consistent when the model is deleted.
+     *
+     * A model with descendants in any ancestry type cannot be deleted: its
+     * descendants would keep paths to a node that no longer exists. A leaf's
+     * own rows are removed once the delete has happened, so a delete that
+     * another listener cancels keeps them. A soft delete changes nothing, so
+     * a restored model keeps its place in every hierarchy.
+     */
+    public static function bootHasAncestry(): void
+    {
+        $ensureHasNoDescendants = static function (Model $model): void {
+            /** @var Model&self $model */
+            $model->ensureHasNoAncestryDescendants();
+        };
+
+        if (method_exists(static::class, 'forceDeleting')) {
+            // SoftDeletes::forceDelete() sets its force flag after this event and
+            // only clears it once delete() returns, so refusing here keeps a
+            // later delete() a soft delete.
+            static::forceDeleting($ensureHasNoDescendants);
+        } else {
+            static::deleting($ensureHasNoDescendants);
+        }
+
+        static::deleted(static function (Model $model): void {
+            /** @var Model&self $model */
+            // A soft delete keeps the model; read that from the model rather
+            // than the force flag, which deferred events see already reset.
+            if ($model->exists) {
+                return;
+            }
+
+            // The check above is skipped when an earlier listener returns a
+            // value (the dispatcher halts on it) or a child is attached
+            // meanwhile, so check again before removing anything.
+            $model->ensureHasNoAncestryDescendants();
+            $model->deleteOwnAncestryRows();
+        });
+    }
+
     /**
      * Get all hierarchy entries where this model is an ancestor.
      *
@@ -286,5 +333,76 @@ trait HasAncestry
     protected function getAncestryService(): AncestryService
     {
         return resolve(AncestryService::class);
+    }
+
+    /**
+     * Refuse the delete while the model is an ancestor of another node.
+     *
+     * Rows are checked directly rather than through the descendant models,
+     * so rows left behind for a descendant that no longer exists still block.
+     *
+     * @throws NodeHasDescendantsException When the model has descendants in any ancestry type
+     */
+    private function ensureHasNoAncestryDescendants(): void
+    {
+        /** @var list<string> $types */
+        $types = $this->newAncestryRowQuery()
+            ->where('ancestor_type', $this->getMorphClass())
+            ->where('ancestor_id', $this->storedAncestryKey())
+            ->where('depth', '>', 0)
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type')
+            ->all();
+
+        if ($types !== []) {
+            throw NodeHasDescendantsException::cannotDelete($this, $types);
+        }
+    }
+
+    /**
+     * Remove the model's self rows and its paths to its ancestors.
+     *
+     * Only rows with the model as descendant are removed. The descendant
+     * check runs first, so for a leaf that is every row it appears in.
+     */
+    private function deleteOwnAncestryRows(): void
+    {
+        $this->newAncestryRowQuery()
+            ->where('descendant_type', $this->getMorphClass())
+            ->where('descendant_id', $this->storedAncestryKey())
+            ->delete();
+    }
+
+    /**
+     * The morph key value the closure rows were written with.
+     *
+     * Rows hold the value stored when the model was attached, and Eloquent
+     * deletes by the original key too, so an unsaved change to the key
+     * column must not redirect the check or the cleanup.
+     */
+    private function storedAncestryKey(): int|string
+    {
+        $registry = resolve(ModelRegistry::class);
+        $original = $this->getOriginal($registry->getModelKey($this));
+
+        if (is_int($original) || is_string($original)) {
+            return $original;
+        }
+
+        // No stored value, e.g. the key column was not selected: defer to the
+        // registry, which refuses a missing key rather than matching nothing.
+        return $registry->getModelKeyValue($this);
+    }
+
+    /**
+     * @return Builder<Ancestor>
+     */
+    private function newAncestryRowQuery(): Builder
+    {
+        /** @var class-string<Ancestor> $ancestorModel */
+        $ancestorModel = Config::get('ancestry.models.ancestor', Ancestor::class);
+
+        return $ancestorModel::query();
     }
 }

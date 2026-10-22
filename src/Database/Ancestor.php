@@ -48,16 +48,6 @@ final class Ancestor extends Model
     use ConfiguresTable;
 
     /**
-     * The config key for table name resolution.
-     */
-    protected string $configTableKey = 'table_name';
-
-    /**
-     * The default table name if not configured.
-     */
-    protected string $defaultTable = 'hierarchies';
-
-    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -75,12 +65,25 @@ final class Ancestor extends Model
     /**
      * The attributes that should be cast.
      *
+     * Kept as a property because Model::casts() only exists from Laravel 11,
+     * which the package does not yet require.
+     *
      * @var array<string, string>
      */
     #[Override()]
     protected $casts = [
         'depth' => 'integer',
     ];
+
+    /**
+     * The config key for table name resolution.
+     */
+    private string $configTableKey = 'table_name';
+
+    /**
+     * The default table name if not configured.
+     */
+    private string $defaultTable = 'hierarchies';
 
     /**
      * Get the ancestor model instance.

@@ -270,6 +270,90 @@ Ancestry::moveToParent($manager, null, 'seller');
 Ancestry::removeFromAncestry($seller, 'seller');
 ```
 
+### Deleting Models
+
+Deleting a model that uses the `HasAncestry` trait removes or protects its
+closure rows:
+
+- A model with no descendants in any ancestry type is deleted together with its
+  own rows: its self rows and its paths to its ancestors, in every type.
+- A model that still has descendants in any type cannot be deleted. `delete()`
+  throws `NodeHasDescendantsException` naming the blocking types, and the model
+  and its rows are kept. Delete, move or detach the descendants first.
+- A soft delete leaves the rows in place, so `restore()` keeps the hierarchy.
+  Only a force delete removes rows or throws, and a force delete refused before
+  the row is deleted leaves the model able to soft delete.
+- Ancestry snapshots are kept, and no ancestry events are dispatched.
+
+```php
+$child->delete();  // removes the child's rows
+$parent->delete(); // throws NodeHasDescendantsException while children remain
+```
+
+The check reads closure rows, not models. Rows left behind by a descendant that
+was deleted without this cleanup (before 2.1.0, or by any delete that skips
+model events) still block its ancestors. Remove them by the missing
+descendant's morph type and key:
+
+```php
+use Cline\Ancestry\Database\Ancestor;
+
+Ancestor::query()
+    ->where('descendant_type', $missingMorphType)
+    ->where('descendant_id', $missingKey)
+    ->delete();
+```
+
+To find such rows for one model class, compare the descendant keys with the
+model's table (adjust the table, alias and key column to your setup):
+
+```sql
+SELECT a.type, a.descendant_id, count(*) AS blocking_rows
+FROM ancestors a
+WHERE a.depth > 0
+  AND a.descendant_type = 'Account'
+  AND NOT EXISTS (SELECT 1 FROM accounts m WHERE m.id = a.descendant_id)
+GROUP BY a.type, a.descendant_id;
+```
+
+Limits:
+
+- Deletes that skip model events leave the rows behind: query builder deletes,
+  `deleteQuietly()`, `withoutEvents()`, `MassPrunable`, raw SQL, `truncate`,
+  and rows removed by a database `ON DELETE CASCADE`. So do `Event::fake()`
+  without an event list, a `$dispatchesEvents` listener that returns a value
+  for `deleted`, and a `deleted` listener registered before the model boots
+  that returns `false`.
+- With an enforced morph map or morph key map, every class using the trait,
+  subclasses included, must be mapped to be deleted, even when it was never
+  in a hierarchy.
+- `Prunable` deletes through `delete()` or `forceDelete()`. A model with
+  descendants is reported and skipped on every prune run, after its
+  `pruning()` method has already run.
+- Both the check and the cleanup read the model's morph key column (see
+  morph key maps). A model loaded without that column cannot be deleted; load
+  it before calling `delete()`.
+- The check and the cleanup take no locks, and `attachToParent()` does not
+  check that the parent still exists. A child attached after the delete has
+  committed, for example through a stale instance, gets paths to the deleted
+  model, so serialize deletes with attaches to the same parent when both can
+  run at once.
+- The descendants are checked again in the `deleted` event, after the model
+  row is gone, because Laravel skips the trait's first check when an earlier
+  `deleting` listener (including a `$dispatchesEvents` one) returns a value or
+  the events are held back with `Event::defer()`, and a child can be attached
+  meanwhile. After such a late refusal the instance already counts as deleted
+  (and a soft-deletable one is still force deleting), so reload it before
+  trying again. That second refusal, a failed cleanup, and anything earlier
+  `deleting` listeners wrote are only undone when the delete runs inside
+  `DB::transaction()` (or `deleteOrFail()`), so delete inside one. This only
+  covers the rows when `ancestry.connection` is the model's connection.
+- The descendant check runs in the trait's own listener, registered when the
+  model boots. `booted()` listeners and observers run after it, so they cannot
+  delete the descendants first; delete them before calling `delete()` on the
+  parent. Listeners registered earlier (traits listed before `HasAncestry`,
+  or `Model::deleting()` calls made before the model boots) run before it.
+
 ## Using the Trait
 
 All operations are also available directly on models using the `HasAncestry` trait:
@@ -492,6 +576,10 @@ Always set the type first:
 Ancestry::for($seller)->type('seller')->ancestors(); // Works!
 ```
 
+Deleting a model that still has descendants throws
+`Cline\Ancestry\Exceptions\NodeHasDescendantsException`. Like every package
+exception it implements `Cline\Ancestry\Exceptions\AncestryException`.
+
 <a id="doc-docs-configuration"></a>
 
 Ancestry is highly configurable. This guide covers all available options.
@@ -600,7 +688,11 @@ Events dispatched:
 - `NodeAttached` - When a node is attached to a parent
 - `NodeDetached` - When a node is detached from its parent
 - `NodeMoved` - When a node is moved to a new parent
-- `NodeRemoved` - When a node is completely removed
+- `NodeRemoved` - When a node is completely removed with `removeFromAncestry()`
+
+Deleting a model that uses `HasAncestry` removes its rows without dispatching
+any of these events, so listeners that track hierarchy changes also need to
+handle the model's own `deleted` event.
 
 ## Caching
 

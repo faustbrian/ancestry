@@ -12,6 +12,8 @@ namespace Cline\Ancestry\Database\Concerns;
 use Illuminate\Support\Facades\Config;
 use Override;
 
+use function get_object_vars;
+use function is_string;
 use function sprintf;
 
 /**
@@ -37,8 +39,10 @@ trait ConfiguresTable
     #[Override()]
     public function getTable(): string
     {
-        $configKey = $this->configTableKey ?? 'table_name';
-        $defaultTable = $this->defaultTable ?? 'hierarchies';
+        // Models that omit the properties keep the documented defaults.
+        $properties = get_object_vars($this);
+        $configKey = is_string($properties['configTableKey'] ?? null) ? $properties['configTableKey'] : 'table_name';
+        $defaultTable = is_string($properties['defaultTable'] ?? null) ? $properties['defaultTable'] : 'hierarchies';
 
         /** @var string */
         return Config::get(sprintf('ancestry.%s', $configKey), $defaultTable);
