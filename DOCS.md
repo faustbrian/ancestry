@@ -304,25 +304,48 @@ Ancestor::query()
     ->delete();
 ```
 
+To find such rows for one model class, compare the descendant keys with the
+model's table (adjust the table, alias and key column to your setup):
+
+```sql
+SELECT a.type, a.descendant_id, count(*) AS blocking_rows
+FROM ancestors a
+WHERE a.depth > 0
+  AND a.descendant_type = 'Account'
+  AND NOT EXISTS (SELECT 1 FROM accounts m WHERE m.id = a.descendant_id)
+GROUP BY a.type, a.descendant_id;
+```
+
 Limits:
 
 - Deletes that skip model events leave the rows behind: query builder deletes,
   `deleteQuietly()`, `withoutEvents()`, `MassPrunable`, raw SQL, `truncate`,
-  and rows removed by a database `ON DELETE CASCADE`.
+  and rows removed by a database `ON DELETE CASCADE`. So does `Event::fake()`
+  without an event list, and a `$dispatchesEvents` listener that returns a
+  value for `deleting` or `deleted`.
+- With an enforced morph map or morph key map, every class using the trait,
+  subclasses included, must be mapped to be deleted, even when it was never
+  in a hierarchy.
+- `Prunable` deletes through `delete()` or `forceDelete()`, so a model with
+  descendants throws and stops that prune run.
 - Both the check and the cleanup read the model's morph key column (see
   morph key maps). A model loaded without that column cannot be deleted; load
   it before calling `delete()`.
-- The check and the cleanup take no locks. A child attached to the model while
-  it is being deleted keeps its paths to the deleted model, so serialize
-  deletes with attaches to the same parent when both can run at once.
-- The rows are removed after the model row, in the `deleted` event. Run the
-  delete inside `DB::transaction()` when a failed cleanup must also keep the
-  model. This only covers the rows when `ancestry.connection` is the model's
-  connection.
-- The descendant check runs in the trait's own listener, which is registered
-  when the model boots, before `booted()` listeners and observers. Those run
-  too late to delete the descendants first, so delete them before calling
-  `delete()` on the parent.
+- The check and the cleanup take no locks, and `attachToParent()` does not
+  check that the parent still exists. A child attached to the model while or
+  after it is deleted, for example through a stale instance, keeps or gets
+  paths to the deleted model, so serialize deletes with attaches to the same
+  parent when both can run at once.
+- The rows are removed after the model row, in the `deleted` event, and a
+  refused delete does not undo what earlier `deleting` listeners wrote. Run
+  the delete inside `DB::transaction()` (or use `deleteOrFail()`) so either
+  failure rolls everything back. This only covers the rows when
+  `ancestry.connection` is the model's connection.
+- The descendant check runs in the trait's own listener, registered when the
+  model boots. `booted()` listeners and observers run after it, so they cannot
+  delete the descendants first; delete them before calling `delete()` on the
+  parent. Listeners registered earlier (traits listed before `HasAncestry`,
+  or `Model::deleting()` calls made before the model boots) run before it.
 
 ## Using the Trait
 

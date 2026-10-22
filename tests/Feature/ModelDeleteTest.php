@@ -19,6 +19,7 @@ use Cline\Ancestry\Exceptions\NodeHasDescendantsException;
 use Cline\Ancestry\Facades\Ancestry;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Tests\Fixtures\SoftDeletableUser;
@@ -237,12 +238,69 @@ describe('Model delete', function (): void {
         $events = [NodeAttached::class, NodeDetached::class, NodeMoved::class, NodeRemoved::class, SnapshotCleared::class];
         Event::fake($events);
 
-        $leaf->delete();
+        expect($leaf->delete())->toBeTrue();
+
+        expect(ancestorRowIdsFor($leaf))->toBe([]);
 
         foreach ($events as $event) {
             Event::assertNotDispatched($event);
         }
     });
+
+    test('a child attached while its parent is deleted keeps its complete paths', function (): void {
+        [$grandparent, $parent] = createAncestorChain(2);
+        $child = user();
+        User::deleting(function (User $deleting) use ($parent, $child): void {
+            if (!$deleting->is($parent)) {
+                return;
+            }
+
+            Ancestry::addToAncestry($child, 'seller', $parent);
+        });
+
+        expect($parent->delete())->toBeTrue();
+
+        $childPaths = DB::table(
+            new Ancestor()->getTable(),
+        )
+            ->where('descendant_type', $child->getMorphClass())
+            ->where('descendant_id', $child->getKey())
+            ->orderBy('depth')
+            ->pluck('depth')
+            ->all();
+        expect($childPaths)->toEqual([0, 1, 2]);
+        expect(Ancestry::isAncestorOf($grandparent, $child, 'seller'))->toBeTrue();
+    });
+
+    test('a model loaded without its morph key column cannot be deleted', function (): void {
+        resolve(ModelRegistry::class)->morphKeyMap([User::class => 'email']);
+        $user = user(['email' => 'leaf@example.com']);
+        Ancestry::addToAncestry($user, 'seller');
+        $before = ancestorRowIds();
+        $partial = User::query()->select('id')->findOrFail($user->getKey());
+
+        expect(fn () => $partial->delete())->toThrow(TypeError::class);
+
+        expect(User::query()->whereKey($user->getKey())->exists())->toBeTrue();
+        expect(ancestorRowIds())->toBe($before);
+    })->skip(
+        fn (): bool => !in_array(env('ANCESTRY_ANCESTOR_MORPH_TYPE', 'string'), ['morph', 'string'], true),
+        'Email keys only fit string morph columns',
+    );
+
+    test('a failed cleanup inside a transaction keeps the model', function (): void {
+        [, $leaf] = createAncestorChain(2);
+        $before = ancestorRowIds();
+        DB::statement(sprintf(
+            "CREATE TRIGGER block_ancestry_cleanup BEFORE DELETE ON %s BEGIN SELECT RAISE(ABORT, 'cleanup failed'); END",
+            new Ancestor()->getTable(),
+        ));
+
+        expect(fn () => DB::transaction(fn (): ?bool => $leaf->delete()))->toThrow(QueryException::class);
+
+        expect(User::query()->whereKey($leaf->getKey())->exists())->toBeTrue();
+        expect(ancestorRowIds())->toBe($before);
+    })->skip(fn (): bool => config('database.default') !== 'testing' && DB::getDriverName() !== 'sqlite', 'Uses an SQLite trigger');
 
     test('deleting a leaf keeps ancestry snapshots that reference it', function (): void {
         [$grandparent, $parent, $leaf] = createAncestorChain(3);
@@ -351,8 +409,20 @@ describe('Model delete', function (): void {
             expect($parent->delete())->toBeTrue();
             expect($parent->trashed())->toBeTrue();
             expect(SoftDeletableUser::withTrashed()->whereKey($parent->getKey())->exists())->toBeTrue();
-            expect(ancestorRowIdsFor($parent))->toBe(array_values(array_intersect($before, ancestorRowIdsFor($parent))));
             expect(ancestorRowIdsFor($parent))->toHaveCount(1);
+        });
+
+        test('force deleting a trashed leaf removes its rows', function (): void {
+            $parent = SoftDeletableUser::query()->create();
+            $child = SoftDeletableUser::query()->create();
+            Ancestry::addToAncestry($parent, 'seller');
+            Ancestry::addToAncestry($child, 'seller', $parent);
+            $child->delete();
+
+            expect($child->forceDelete())->toBeTrue();
+
+            expect(ancestorRowIdsFor($child))->toBe([]);
+            expect(SoftDeletableUser::withTrashed()->whereKey($child->getKey())->exists())->toBeFalse();
         });
     });
 });
