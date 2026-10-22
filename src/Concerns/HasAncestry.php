@@ -47,14 +47,19 @@ trait HasAncestry
      */
     public static function bootHasAncestry(): void
     {
-        static::deleting(static function (Model $model): void {
+        $ensureHasNoDescendants = static function (Model $model): void {
             /** @var Model&self $model */
-            if ($model->isSoftDeletingForAncestry()) {
-                return;
-            }
-
             $model->ensureHasNoAncestryDescendants();
-        });
+        };
+
+        if (method_exists(static::class, 'forceDeleting')) {
+            // SoftDeletes::forceDelete() sets its force flag after this event and
+            // only clears it once delete() returns, so refusing here keeps a
+            // later delete() a soft delete.
+            static::forceDeleting($ensureHasNoDescendants);
+        } else {
+            static::deleting($ensureHasNoDescendants);
+        }
 
         static::deleted(static function (Model $model): void {
             /** @var Model&self $model */

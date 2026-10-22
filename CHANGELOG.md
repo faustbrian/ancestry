@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `NodeHasDescendantsException` and nothing is deleted. Previously the delete
   went through and left the descendants with paths to a missing node. Delete,
   move or detach the descendants first. Rows left behind for descendants that
-  no longer exist also block the delete until they are removed.
+  no longer exist (for example from deletes before this release) also block
+  the delete; DOCS.md shows the query that removes them.
 - Soft deletes leave the closure rows in place, so a restored model keeps its
   hierarchy; only a force delete removes rows or throws. Deletes that skip
   model events (query builder deletes, `deleteQuietly()`, `withoutEvents()`)

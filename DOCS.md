@@ -272,16 +272,17 @@ Ancestry::removeFromAncestry($seller, 'seller');
 
 ### Deleting Models
 
-Deleting a model that uses the `HasAncestry` trait keeps the closure table
-consistent:
+Deleting a model that uses the `HasAncestry` trait removes or protects its
+closure rows:
 
 - A model with no descendants in any ancestry type is deleted together with its
   own rows: its self rows and its paths to its ancestors, in every type.
 - A model that still has descendants in any type cannot be deleted. `delete()`
-  throws `NodeHasDescendantsException` naming the blocking types, and nothing is
-  deleted. Delete, move or detach the descendants first.
+  throws `NodeHasDescendantsException` naming the blocking types, and the model
+  and its rows are kept. Delete, move or detach the descendants first.
 - A soft delete leaves the rows in place, so `restore()` keeps the hierarchy.
-  Only a force delete removes rows or throws.
+  Only a force delete removes rows or throws, and a refused force delete leaves
+  the model able to soft delete.
 - Ancestry snapshots are kept, and no ancestry events are dispatched.
 
 ```php
@@ -289,13 +290,35 @@ $child->delete();  // removes the child's rows
 $parent->delete(); // throws NodeHasDescendantsException while children remain
 ```
 
-Deletes that skip model events, such as query builder deletes,
-`deleteQuietly()` or `withoutEvents()`, leave the rows behind.
+The check reads closure rows, not models. Rows left behind by a descendant that
+was deleted without this cleanup (for example before 2.1.0, or by a query
+builder delete) still block its ancestors. Remove them by the missing
+descendant's morph type and key:
 
-The descendant check runs in the trait's own `deleting` listener, before your
-model's `booted()` listeners and observers. A listener that deletes the
-descendants itself therefore runs too late: delete them before calling
-`delete()` on the parent.
+```php
+use Cline\Ancestry\Database\Ancestor;
+
+Ancestor::query()
+    ->where('descendant_type', $missingMorphType)
+    ->where('descendant_id', $missingKey)
+    ->delete();
+```
+
+Limits:
+
+- Deletes that skip model events, such as query builder deletes,
+  `deleteQuietly()` or `withoutEvents()`, leave the rows behind.
+- The check and the cleanup take no locks. A child attached to the model while
+  it is being deleted keeps its paths to the deleted model, so serialize
+  deletes with attaches to the same parent when both can run at once.
+- The rows are removed after the model row, in the `deleted` event. Run the
+  delete inside `DB::transaction()` when a failed cleanup must also keep the
+  model. This only covers the rows when `ancestry.connection` is the model's
+  connection.
+- The descendant check runs in the trait's own listener, before your model's
+  `booted()` listeners and observers. A listener that deletes the descendants
+  itself therefore runs too late: delete them before calling `delete()` on the
+  parent.
 
 ## Using the Trait
 

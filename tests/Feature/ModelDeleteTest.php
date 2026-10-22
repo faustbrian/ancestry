@@ -335,5 +335,24 @@ describe('Model delete', function (): void {
             expect(SoftDeletableUser::withTrashed()->whereKey($parent->getKey())->exists())->toBeTrue();
             expect(ancestorRowIds())->toBe($before);
         });
+
+        test('a blocked force delete leaves the model able to soft delete', function (): void {
+            $parent = SoftDeletableUser::query()->create();
+            $child = SoftDeletableUser::query()->create();
+            Ancestry::addToAncestry($parent, 'seller');
+            Ancestry::addToAncestry($child, 'seller', $parent);
+            $before = ancestorRowIds();
+
+            expect(fn () => $parent->forceDelete())->toThrow(NodeHasDescendantsException::class);
+            expect($parent->isForceDeleting())->toBeFalse();
+
+            $child->forceDelete();
+
+            expect($parent->delete())->toBeTrue();
+            expect($parent->trashed())->toBeTrue();
+            expect(SoftDeletableUser::withTrashed()->whereKey($parent->getKey())->exists())->toBeTrue();
+            expect(ancestorRowIdsFor($parent))->toBe(array_values(array_intersect($before, ancestorRowIdsFor($parent))));
+            expect(ancestorRowIdsFor($parent))->toHaveCount(1);
+        });
     });
 });
