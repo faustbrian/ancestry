@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Config;
 
+use function is_int;
+use function is_string;
 use function method_exists;
 use function resolve;
 
@@ -63,7 +65,9 @@ trait HasAncestry
 
         static::deleted(static function (Model $model): void {
             /** @var Model&self $model */
-            if ($model->isSoftDeletingForAncestry()) {
+            // A soft delete keeps the model; read that from the model rather
+            // than the force flag, which deferred events see already reset.
+            if ($model->exists) {
                 return;
             }
 
@@ -332,14 +336,6 @@ trait HasAncestry
     }
 
     /**
-     * Determine whether the current delete only soft deletes the model.
-     */
-    private function isSoftDeletingForAncestry(): bool
-    {
-        return method_exists($this, 'isForceDeleting') && !$this->isForceDeleting();
-    }
-
-    /**
      * Refuse the delete while the model is an ancestor of another node.
      *
      * Rows are checked directly rather than through the descendant models,
@@ -352,7 +348,7 @@ trait HasAncestry
         /** @var list<string> $types */
         $types = $this->newAncestryRowQuery()
             ->where('ancestor_type', $this->getMorphClass())
-            ->where('ancestor_id', resolve(ModelRegistry::class)->getModelKeyValue($this))
+            ->where('ancestor_id', $this->storedAncestryKey())
             ->where('depth', '>', 0)
             ->distinct()
             ->orderBy('type')
@@ -367,16 +363,34 @@ trait HasAncestry
     /**
      * Remove the model's self rows and its paths to its ancestors.
      *
-     * Only rows with the model as descendant are removed. For a leaf that is
-     * every row it appears in. A child attached after the descendant check
-     * keeps its complete paths instead of losing the one through this model.
+     * Only rows with the model as descendant are removed. The descendant
+     * check runs first, so for a leaf that is every row it appears in.
      */
     private function deleteOwnAncestryRows(): void
     {
         $this->newAncestryRowQuery()
             ->where('descendant_type', $this->getMorphClass())
-            ->where('descendant_id', resolve(ModelRegistry::class)->getModelKeyValue($this))
+            ->where('descendant_id', $this->storedAncestryKey())
             ->delete();
+    }
+
+    /**
+     * The morph key value the closure rows were written with.
+     *
+     * Rows hold the value stored when the model was attached, and Eloquent
+     * deletes by the original key too, so an unsaved change to the key
+     * column must not redirect the check or the cleanup.
+     */
+    private function storedAncestryKey(): int|string
+    {
+        $registry = resolve(ModelRegistry::class);
+        $original = $this->getOriginal($registry->getModelKey($this));
+
+        if (is_int($original) || is_string($original)) {
+            return $original;
+        }
+
+        return $registry->getModelKeyValue($this);
     }
 
     /**

@@ -281,8 +281,8 @@ closure rows:
   throws `NodeHasDescendantsException` naming the blocking types, and the model
   and its rows are kept. Delete, move or detach the descendants first.
 - A soft delete leaves the rows in place, so `restore()` keeps the hierarchy.
-  Only a force delete removes rows or throws, and a refused force delete leaves
-  the model able to soft delete.
+  Only a force delete removes rows or throws, and a force delete refused before
+  the row is deleted leaves the model able to soft delete.
 - Ancestry snapshots are kept, and no ancestry events are dispatched.
 
 ```php
@@ -320,9 +320,10 @@ Limits:
 
 - Deletes that skip model events leave the rows behind: query builder deletes,
   `deleteQuietly()`, `withoutEvents()`, `MassPrunable`, raw SQL, `truncate`,
-  and rows removed by a database `ON DELETE CASCADE`. So does `Event::fake()`
-  without an event list, and a `$dispatchesEvents` listener that returns a
-  value for `deleting` or `deleted`.
+  and rows removed by a database `ON DELETE CASCADE`. So do `Event::fake()`
+  without an event list, a `$dispatchesEvents` listener that returns a value
+  for `deleted`, and a `deleted` listener registered before the model boots
+  that returns `false`.
 - With an enforced morph map or morph key map, every class using the trait,
   subclasses included, must be mapped to be deleted, even when it was never
   in a hierarchy.
@@ -338,9 +339,12 @@ Limits:
   model, so serialize deletes with attaches to the same parent when both can
   run at once.
 - The descendants are checked again in the `deleted` event, after the model
-  row is gone, because an earlier `deleting` listener that returns a value
-  stops Laravel from calling the trait's check, and a child can be attached
-  meanwhile. That second refusal, a failed cleanup, and anything earlier
+  row is gone, because Laravel skips the trait's first check when an earlier
+  `deleting` listener (including a `$dispatchesEvents` one) returns a value or
+  the events are held back with `Event::defer()`, and a child can be attached
+  meanwhile. After such a late refusal the instance already counts as deleted
+  (and a soft-deletable one is still force deleting), so reload it before
+  trying again. That second refusal, a failed cleanup, and anything earlier
   `deleting` listeners wrote are only undone when the delete runs inside
   `DB::transaction()` (or `deleteOrFail()`), so delete inside one. This only
   covers the rows when `ancestry.connection` is the model's connection.

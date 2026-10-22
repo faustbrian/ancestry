@@ -29,8 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deleting a model that uses `HasAncestry` now runs closure-table queries and
   can fail where it used to succeed: under an enforced morph map or morph key
   map every class using the trait (subclasses included) must be mapped, and a
-  model loaded without its morph key column cannot be deleted. See "Deleting
-  Models" in DOCS.md for the remaining limits.
+  model loaded without its morph key column cannot be deleted. Without a
+  surrounding transaction, a delete whose first check Laravel skips (an
+  earlier `deleting` listener returning a value, `Event::defer()`) is refused
+  only after the model row is gone. See "Deleting Models" in DOCS.md for the
+  remaining limits.
 - `ConfiguresTable` reads its table properties without null coalescing on
   typed properties, so current PHPStan passes. Models using it without the
   properties still fall back to `table_name` and `hierarchies`.

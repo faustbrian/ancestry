@@ -17,6 +17,7 @@ use Cline\Ancestry\Events\SnapshotCleared;
 use Cline\Ancestry\Exceptions\AncestryException;
 use Cline\Ancestry\Exceptions\NodeHasDescendantsException;
 use Cline\Ancestry\Facades\Ancestry;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\QueryException;
@@ -280,6 +281,44 @@ describe('Model delete', function (): void {
         expect(Ancestry::isAncestorOf($parent, $child, 'seller'))->toBeTrue();
     });
 
+    test('without a transaction the re-check refuses before removing any rows', function (): void {
+        Model::clearBootedModels();
+        User::deleting(fn (): int => 0);
+        [$parent, $child] = createAncestorChain(2);
+        $before = ancestorRowIds();
+
+        expect(fn () => $parent->delete())->toThrow(NodeHasDescendantsException::class);
+
+        expect(User::query()->whereKey($parent->getKey())->exists())->toBeFalse();
+        expect(ancestorRowIds())->toBe($before);
+        expect(Ancestry::isAncestorOf($parent, $child, 'seller'))->toBeTrue();
+    });
+
+    test('rows are matched by the stored morph key, not an unsaved change', function (): void {
+        resolve(ModelRegistry::class)->morphKeyMap([User::class => 'email']);
+        $parent = user(['email' => 'parent@example.com']);
+        $child = user(['email' => 'child@example.com']);
+        Ancestry::addToAncestry($parent, 'seller');
+        Ancestry::addToAncestry($child, 'seller', $parent);
+        $before = ancestorRowIds();
+
+        $parent->email = 'renamed-parent@example.com';
+        expect(fn () => $parent->delete())->toThrow(NodeHasDescendantsException::class);
+        expect(ancestorRowIds())->toBe($before);
+
+        $child->email = 'renamed-child@example.com';
+        expect($child->delete())->toBeTrue();
+
+        expect(DB::table(
+            new Ancestor()->getTable(),
+        )
+            ->where('descendant_id', 'child@example.com')
+            ->exists())->toBeFalse();
+    })->skip(
+        fn (): bool => !in_array(env('ANCESTRY_ANCESTOR_MORPH_TYPE', 'string'), ['morph', 'string'], true),
+        'Email keys only fit string morph columns',
+    );
+
     test('a model loaded without its morph key column cannot be deleted', function (): void {
         resolve(ModelRegistry::class)->morphKeyMap([User::class => 'email']);
         $user = user(['email' => 'leaf@example.com']);
@@ -287,7 +326,15 @@ describe('Model delete', function (): void {
         $before = ancestorRowIds();
         $partial = User::query()->select('id')->findOrFail($user->getKey());
 
-        expect(fn () => $partial->delete())->toThrow(TypeError::class);
+        $thrown = null;
+
+        try {
+            $partial->delete();
+        } catch (Throwable $throwable) {
+            $thrown = $throwable;
+        }
+
+        expect($thrown)->not->toBeNull();
 
         expect(User::query()->whereKey($user->getKey())->exists())->toBeTrue();
         expect(ancestorRowIds())->toBe($before);
@@ -418,6 +465,18 @@ describe('Model delete', function (): void {
             expect($parent->trashed())->toBeTrue();
             expect(SoftDeletableUser::withTrashed()->whereKey($parent->getKey())->exists())->toBeTrue();
             expect(ancestorRowIdsFor($parent))->toHaveCount(1);
+        });
+
+        test('a force delete with deferred events still removes the rows of a leaf', function (): void {
+            $parent = SoftDeletableUser::query()->create();
+            $child = SoftDeletableUser::query()->create();
+            Ancestry::addToAncestry($parent, 'seller');
+            Ancestry::addToAncestry($child, 'seller', $parent);
+
+            resolve(Dispatcher::class)->defer(fn (): ?bool => $child->forceDelete());
+
+            expect(SoftDeletableUser::withTrashed()->whereKey($child->getKey())->exists())->toBeFalse();
+            expect(ancestorRowIdsFor($child))->toBe([]);
         });
 
         test('force deleting a trashed leaf removes its rows', function (): void {
