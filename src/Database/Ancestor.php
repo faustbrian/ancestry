@@ -73,16 +73,6 @@ final class Ancestor extends Model
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    #[Override()]
-    protected $casts = [
-        'depth' => 'integer',
-    ];
-
-    /**
      * Get the ancestor model instance.
      *
      * Resolves the ancestor model using ModelRegistry to support custom key mappings.
@@ -134,6 +124,18 @@ final class Ancestor extends Model
     public function descendantRelation(): MorphTo
     {
         return $this->morphTo('descendant');
+    }
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'depth' => 'integer',
+        ];
     }
 
     /**

@@ -37,10 +37,7 @@ trait ConfiguresTable
     #[Override()]
     public function getTable(): string
     {
-        $configKey = $this->configTableKey ?? 'table_name';
-        $defaultTable = $this->defaultTable ?? 'hierarchies';
-
         /** @var string */
-        return Config::get(sprintf('ancestry.%s', $configKey), $defaultTable);
+        return Config::get(sprintf('ancestry.%s', $this->configTableKey), $this->defaultTable);
     }
 }
