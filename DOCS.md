@@ -292,6 +292,11 @@ $parent->delete(); // throws NodeHasDescendantsException while children remain
 Deletes that skip model events, such as query builder deletes,
 `deleteQuietly()` or `withoutEvents()`, leave the rows behind.
 
+The descendant check runs in the trait's own `deleting` listener, before your
+model's `booted()` listeners and observers. A listener that deletes the
+descendants itself therefore runs too late: delete them before calling
+`delete()` on the parent.
+
 ## Using the Trait
 
 All operations are also available directly on models using the `HasAncestry` trait:

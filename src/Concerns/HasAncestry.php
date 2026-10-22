@@ -357,20 +357,16 @@ trait HasAncestry
 
     /**
      * Remove the model's self rows and its paths to its ancestors.
+     *
+     * Only rows with the model as descendant are removed. For a leaf that is
+     * every row it appears in. A child attached after the descendant check
+     * keeps its complete paths instead of losing the one through this model.
      */
     private function deleteOwnAncestryRows(): void
     {
-        $morphClass = $this->getMorphClass();
-        $key = resolve(ModelRegistry::class)->getModelKeyValue($this);
-
         $this->newAncestryRowQuery()
-            ->where(static fn (Builder $rows): Builder => $rows
-                ->where(static fn (Builder $asAncestor): Builder => $asAncestor
-                    ->where('ancestor_type', $morphClass)
-                    ->where('ancestor_id', $key))
-                ->orWhere(static fn (Builder $asDescendant): Builder => $asDescendant
-                    ->where('descendant_type', $morphClass)
-                    ->where('descendant_id', $key)))
+            ->where('descendant_type', $this->getMorphClass())
+            ->where('descendant_id', resolve(ModelRegistry::class)->getModelKeyValue($this))
             ->delete();
     }
 

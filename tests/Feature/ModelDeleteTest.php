@@ -9,7 +9,11 @@
 
 use Cline\Ancestry\Database\Ancestor;
 use Cline\Ancestry\Database\ModelRegistry;
+use Cline\Ancestry\Events\NodeAttached;
+use Cline\Ancestry\Events\NodeDetached;
+use Cline\Ancestry\Events\NodeMoved;
 use Cline\Ancestry\Events\NodeRemoved;
+use Cline\Ancestry\Events\SnapshotCleared;
 use Cline\Ancestry\Exceptions\AncestryException;
 use Cline\Ancestry\Exceptions\NodeHasDescendantsException;
 use Cline\Ancestry\Facades\Ancestry;
@@ -61,6 +65,8 @@ describe('Model delete', function (): void {
         $before = ancestorRowIds();
 
         expect($leafRows)->toHaveCount(3);
+        expect(fn () => $parent->delete())->toThrow(NodeHasDescendantsException::class);
+        expect(ancestorRowIds())->toBe($before);
         expect($leaf->delete())->toBeTrue();
 
         expect(User::query()->whereKey($leaf->getKey())->exists())->toBeFalse();
@@ -147,6 +153,20 @@ describe('Model delete', function (): void {
         }],
     ]);
 
+    test('the descendants exception names every blocking type once', function (): void {
+        $user = user();
+        Ancestry::addToAncestry($user, 'b');
+        Ancestry::addToAncestry(user(), 'b', $user);
+        Ancestry::addToAncestry(user(), 'b', $user);
+        Ancestry::addToAncestry($user, 'a');
+        Ancestry::addToAncestry(user(), 'a', $user);
+
+        expect(fn () => $user->delete())->toThrow(
+            NodeHasDescendantsException::class,
+            sprintf('Cannot delete [%s:%s] - it still has descendants in ancestry types [a, b].', $user->getMorphClass(), $user->getKey()),
+        );
+    });
+
     test('the descendants exception is an ancestry exception', function (): void {
         [$parent] = createAncestorChain(2);
 
@@ -214,11 +234,14 @@ describe('Model delete', function (): void {
 
     test('a delete dispatches no ancestry events', function (): void {
         [, $leaf] = createAncestorChain(2);
-        Event::fake([NodeRemoved::class]);
+        $events = [NodeAttached::class, NodeDetached::class, NodeMoved::class, NodeRemoved::class, SnapshotCleared::class];
+        Event::fake($events);
 
         $leaf->delete();
 
-        Event::assertNotDispatched(NodeRemoved::class);
+        foreach ($events as $event) {
+            Event::assertNotDispatched($event);
+        }
     });
 
     test('deleting a leaf keeps ancestry snapshots that reference it', function (): void {
